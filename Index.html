@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Washington Hikes Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e120f;
+    --bg2: #141a14;
+    --bg3: #1a221a;
+    --surface: #1e271e;
+    --surface2: #232e23;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8ede8;
+    --text2: #9aab98;
+    --text3: #627060;
+    --green: #5dbf7a;
+    --green-dim: #2d5c3a;
+    --green-glow: rgba(93,191,122,0.15);
+    --amber: #d4a843;
+    --amber-dim: rgba(212,168,67,0.15);
+    --red: #d46b5a;
+    --red-dim: rgba(212,107,90,0.15);
+    --blue: #5a9ed4;
+    --blue-dim: rgba(90,158,212,0.15);
+    --purple: #9b7ee6;
+    --purple-dim: rgba(155,126,230,0.15);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* Subtle forest texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% 0%, rgba(93,191,122,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(90,158,212,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 16px 60px; }
+
+  /* HEADER */
+  .hero {
+    padding: 48px 0 32px;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .hero-eyebrow {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: var(--green);
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--green);
+  }
+  .hero-sub {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--text3);
+    font-weight: 300;
+  }
+
+  /* STATS */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--border2); }
+  .stat-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-val.green { color: var(--green); }
+  .stat-lbl {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .progress-label { font-size: 12px; color: var(--text3); white-space: nowrap; }
+  .progress-track {
+    flex: 1;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .progress-pct { font-size: 12px; color: var(--green); font-weight: 500; white-space: nowrap; }
+
+  /* FILTERS */
+  .filters-section {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    margin-bottom: 20px;
+  }
+  .filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .filter-group label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    font-weight: 500;
+  }
+  .filter-group input,
+  .filter-group select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 7px 10px;
+    background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .filter-group input { width: 180px; }
+  .filter-group select { width: 150px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23627060'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+  .filter-group input:focus,
+  .filter-group select:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-glow); }
+  .btn-clear {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 7px 14px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.15s;
+    align-self: flex-end;
+    height: 34px;
+  }
+  .btn-clear:hover { background: var(--bg3); color: var(--text2); border-color: var(--border2); }
+
+  /* HIKE CARDS */
+  .hikes-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .hike-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .hike-card:hover { border-color: var(--border2); }
+  .hike-card.visited { border-left: 3px solid var(--green); }
+
+  .hike-header {
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .hike-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-family: 'Playfair Display', serif;
+  }
+  .hike-card.visited .hike-num {
+    background: var(--green-dim);
+    border-color: rgba(93,191,122,0.3);
+    color: var(--green);
+  }
+
+  .hike-title-block { flex: 1; min-width: 0; }
+  .hike-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: 'Playfair Display', serif;
+    letter-spacing: -0.01em;
+  }
+  .visited-tag {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    background: var(--green-dim);
+    color: var(--green);
+    border: 0.5px solid rgba(93,191,122,0.3);
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .hike-loc {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .hike-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+  }
+  .badge {
+    font-size: 10px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    border: 0.5px solid;
+    white-space: nowrap;
+  }
+  .b-mod { background: rgba(93,191,122,0.12); color: #6dcc8a; border-color: rgba(93,191,122,0.25); }
+  .b-mh  { background: var(--amber-dim); color: #d4a843; border-color: rgba(212,168,67,0.3); }
+  .b-hard{ background: var(--red-dim); color: #d46b5a; border-color: rgba(212,107,90,0.3); }
+  .b-dist{ background: var(--blue-dim); color: #7ab8e0; border-color: rgba(90,158,212,0.3); }
+  .b-elev{ background: var(--purple-dim); color: #b49ce8; border-color: rgba(155,126,230,0.3); }
+  .b-tag { background: var(--bg3); color: var(--text3); border-color: var(--border); }
+
+  .expand-icon {
+    font-size: 11px;
+    color: var(--text3);
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: transform 0.2s;
+  }
+  .hike-card.expanded .expand-icon { transform: rotate(180deg); }
+
+  /* EXPANDED DETAILS */
+  .hike-details {
+    display: none;
+    padding: 0 16px 16px 56px;
+  }
+  .hike-card.expanded .hike-details { display: block; }
+
+  .detail-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+    margin-bottom: 14px;
+    font-weight: 300;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .meta-item {
+    background: var(--bg3);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .meta-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .meta-lbl {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+
+  .detail-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .detail-footer a {
+    color: var(--blue);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .detail-footer a:hover { color: #8dc6e8; }
+
+  .actions-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-visit {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 0.5px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-visit:hover { background: var(--bg3); border-color: var(--green); color: var(--green); }
+  .btn-visit.active { background: var(--green-dim); color: var(--green); border-color: rgba(93,191,122,0.4); }
+  .btn-notes {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 0.5px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .btn-notes:hover { background: var(--bg3); color: var(--text); }
+
+  .notes-section { margin-top: 12px; }
+  .notes-section textarea {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 10px 12px;
+    background: var(--bg3);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.6;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-weight: 300;
+  }
+  .notes-section textarea:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px var(--green-glow);
+  }
+  .notes-section textarea::placeholder { color: var(--text3); }
+  .saved-msg { font-size: 10px; color: var(--green); margin-top: 4px; height: 14px; transition: opacity 0.3s; }
+
+  .note-preview {
+    font-size: 11px;
+    color: var(--text3);
+    font-style: italic;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    border-left: 2px solid var(--green-dim);
+    line-height: 1.5;
+  }
+
+  /* NO RESULTS */
+  .no-results {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text3);
+    font-size: 14px;
+  }
+  .no-results button { margin-top: 12px; }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 0.5px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    line-height: 1.7;
+  }
+  .footer a { color: var(--green); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .hike-card { animation: fadeIn 0.3s ease both; }
+
+  @media (max-width: 600px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .meta-grid { grid-template-columns: repeat(2, 1fr); }
+    .hike-details { padding-left: 16px; }
+    .filter-group input { width: 140px; }
+    .filter-group select { width: 130px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="hero">
+    <div class="hero-eyebrow">Pacific Northwest</div>
+    <h1>Washington <em>Hikes</em><br>Tracker</h1>
+    <div class="hero-sub">25 curated trails · 1,800–3,400 ft elevation gain · Drive times from Bellevue</div>
+  </div>
+
+  <div class="stats-bar" id="statsBar"></div>
+  <div class="progress-wrap">
+    <div class="progress-label">Overall progress</div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-pct" id="progressPct">0%</div>
+  </div>
+
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>Search</label>
+        <input type="text" id="searchInput" placeholder="Trail name or region…">
+      </div>
+      <div class="filter-group">
+        <label>Difficulty</label>
+        <select id="diffFilter">
+          <option value="">All difficulties</option>
+          <option>Moderate</option>
+          <option>Moderate–Hard</option>
+          <option>Hard</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Region</label>
+        <select id="regionFilter">
+          <option value="">All regions</option>
+          <option>Snoqualmie</option>
+          <option>North Cascades</option>
+          <option>Alpine Lakes</option>
+          <option>Mount Rainier</option>
+          <option>Olympic</option>
+          <option>Central Cascades</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Drive from Bellevue</label>
+        <select id="driveFilter">
+          <option value="">Any drive time</option>
+          <option value="45">Under 45 min</option>
+          <option value="60">Under 1 hour</option>
+          <option value="90">Under 1.5 hours</option>
+          <option value="120">Under 2 hours</option>
+          <option value="150">Under 2.5 hours</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Status</label>
+        <select id="statusFilter">
+          <option value="">All hikes</option>
+          <option value="visited">Visited</option>
+          <option value="unvisited">Not visited</option>
+          <option value="noted">Has notes</option>
+        </select>
+      </div>
+      <button class="btn-clear" onclick="clearFilters()">Clear</button>
+    </div>
+  </div>
+
+  <div class="hikes-list" id="hikesList"></div>
+
+  <div class="footer">
+    Trail data sourced from <a href="https://www.wta.org" target="_blank">Washington Trails Association</a> · Drive times approximate from Bellevue, WA<br>
+    Your visited status and notes are saved locally in your browser.
+  </div>
+</div>
+
+<script>
+const HIKES = [
+  {id:1,name:"Mount Pilchuck Fire Lookout",region:"North Cascades",area:"Mountain Loop Hwy",dist:8,gain:3400,diff:"Hard",driveMins:75,driveText:"75 min",hikeLenHrs:"4–6h",season:"Jul–Oct",tags:["Lookout","Views","Iconic"],desc:"Best bang-for-buck hike near Seattle. Drive up the road cuts initial elevation, then it's a rocky scramble to a restored fire lookout with panoramic Cascades and Puget Sound views. Very popular on weekends — go early.",wta:"https://www.wta.org/go-hiking/hikes/mount-pilchuck"},
+  {id:2,name:"Lake Serene",region:"Alpine Lakes",area:"Index / Stevens Pass",dist:8,gain:2000,diff:"Hard",driveMins:70,driveText:"70 min",hikeLenHrs:"5–7h",season:"Jul–Oct",tags:["Alpine Lake","Waterfall","Scenic"],desc:"Stunning alpine lake beneath Bridal Veil Falls in the Cascade mountains. The first stretch is gradual through forest; the final push is steep and rewarding. Arrive early — parking fills fast on weekends.",wta:"https://www.wta.org/go-hiking/hikes/lake-serene-and-bridal-veil-falls"},
+  {id:3,name:"Bandera Mountain",region:"Snoqualmie",area:"I-90 Corridor",dist:8.2,gain:3400,diff:"Hard",driveMins:55,driveText:"55 min",hikeLenHrs:"4–6h",season:"Jun–Nov",tags:["Summit","Views","Demanding"],desc:"Steep relentless climb — 850 ft/mile on average with the last half-mile nearly vertical. Stunning summit views of alpine lakes and Mt. Rainier. Close to Seattle, so it gets very busy on weekends.",wta:"https://www.wta.org/go-hiking/hikes/bandera-mountain"},
+  {id:4,name:"Colchuck Lake",region:"Alpine Lakes",area:"Leavenworth / Icicle Creek",dist:8,gain:2280,diff:"Moderate–Hard",driveMins:110,driveText:"110 min",hikeLenHrs:"4–6h",season:"Jul–Oct",tags:["Alpine Lake","Enchantments","Popular"],desc:"Gateway to the famed Enchantments. Striking turquoise lake flanked by Dragontail and Colchuck peaks. Trailhead requires a day permit in summer. Absolutely spectacular and well worth the drive.",wta:"https://www.wta.org/go-hiking/hikes/colchuck-lake"},
+  {id:5,name:"Park Butte",region:"North Cascades",area:"Mount Baker",dist:7.5,gain:2200,diff:"Moderate–Hard",driveMins:105,driveText:"105 min",hikeLenHrs:"4–5h",season:"Late Jul–Oct",tags:["Lookout","Mt. Baker","Wildflowers"],desc:"Classic North Cascades alpine hike just south of Mt. Baker. Wildflower meadows, rushing waterfalls, and a restored 1930s fire lookout with unobstructed Baker views. A WTA 'Essential Washington' hike.",wta:"https://www.wta.org/go-hiking/hikes/park-butte"},
+  {id:6,name:"Maple Pass Loop",region:"North Cascades",area:"Hwy 20 / Rainy Pass",dist:6.9,gain:2000,diff:"Moderate–Hard",driveMins:155,driveText:"155 min",hikeLenHrs:"3–5h",season:"Aug–Oct",tags:["Loop","Larch","Fall Colors"],desc:"One of Washington's premier fall hikes. Loop over the pass above Lake Ann with panoramic North Cascades views. Golden larch season (late Sept–early Oct) is extraordinary. Go counterclockwise for best views.",wta:"https://www.wta.org/go-hiking/hikes/maple-pass-loop"},
+  {id:7,name:"Granite Mountain Lookout",region:"Snoqualmie",area:"I-90 Corridor",dist:8.6,gain:3800,diff:"Hard",driveMins:55,driveText:"55 min",hikeLenHrs:"4–6h",season:"Jun–Nov",tags:["Lookout","Views","Demanding"],desc:"One of the most strenuous I-90 hikes — nearly 1,000 ft/mile in the upper section. Restored fire lookout at the summit with sweeping 360-degree views. Watch for early-season snow on upper slopes.",wta:"https://www.wta.org/go-hiking/hikes/granite-mountain"},
+  {id:8,name:"Summit Lake (Rainier)",region:"Mount Rainier",area:"Carbon River / Orting",dist:6,gain:2800,diff:"Hard",driveMins:85,driveText:"85 min",hikeLenHrs:"4–5h",season:"Jul–Oct",tags:["Alpine Lake","Rainier Views","Solitude"],desc:"Outstanding bang-for-buck with stunning Rainier views from a beautiful alpine lake. Road to trailhead is rough (6 miles, ~45 min) — AWD recommended. Far fewer crowds than most Rainier-area trails.",wta:"https://www.wta.org/go-hiking/hikes/summit-lake"},
+  {id:9,name:"Three Fingers Lookout",region:"North Cascades",area:"Mountain Loop Hwy",dist:12,gain:3900,diff:"Hard",driveMins:85,driveText:"85 min",hikeLenHrs:"6–9h",season:"Late Jul–Sep",tags:["Lookout","Class 3 Scramble","Epic"],desc:"An epic and demanding adventure to one of Washington's most iconic lookouts. Involves a short via ferrata-style section near the summit. The views of Baker, Rainier, and the Cascades are unforgettable.",wta:"https://www.wta.org/go-hiking/hikes/three-fingers"},
+  {id:10,name:"Rattlesnake Mountain (full traverse)",region:"Snoqualmie",area:"I-90 / North Bend",dist:12,gain:1800,diff:"Moderate",driveMins:35,driveText:"35 min",hikeLenHrs:"4–5h",season:"Year-round",tags:["Year-round","Views","Dog Friendly"],desc:"The full traverse from Rattlesnake Ledge to the summit and back. Closest challenging hike to Bellevue. The Ledge section is extremely popular; the ridge extension is far quieter and equally rewarding.",wta:"https://www.wta.org/go-hiking/hikes/rattlesnake-mountain"},
+  {id:11,name:"Mount Dickerman",region:"North Cascades",area:"Mountain Loop Hwy",dist:8.6,gain:3900,diff:"Hard",driveMins:80,driveText:"80 min",hikeLenHrs:"5–7h",season:"Jul–Nov",tags:["Summit","Baker & Glacier Peak","South-facing"],desc:"South-facing trail that melts out faster than neighbors. Relentless steady climb through old-growth forest to an open summit with famous Mt. Baker and Glacier Peak views. Popular fall destination.",wta:"https://www.wta.org/go-hiking/hikes/mount-dickerman"},
+  {id:12,name:"Kendall Katwalk",region:"Snoqualmie",area:"Snoqualmie Pass",dist:12,gain:2600,diff:"Moderate–Hard",driveMins:60,driveText:"60 min",hikeLenHrs:"5–7h",season:"Late Jul–Sep",tags:["PCT","Narrow Ridge","Iconic"],desc:"Hike the iconic PCT section along a narrow rocky ledge blasted through cliffs above treeline. Old-growth forest, wildflowers, Alpine Lakes Wilderness views. A true Washington classic you'll remember forever.",wta:"https://www.wta.org/go-hiking/hikes/kendall-peak-lakes"},
+  {id:13,name:"Naches Peak Loop",region:"Mount Rainier",area:"Chinook Pass / Hwy 410",dist:3.5,gain:1800,diff:"Moderate",driveMins:90,driveText:"90 min",hikeLenHrs:"2–3h",season:"Jul–Oct",tags:["Loop","Wildflowers","Rainier Views"],desc:"Spectacular short loop combining two trail systems including the PCT. Outstanding Mt. Rainier views from multiple angles. Peak wildflower season is mid-July. Best family-friendly option on this list.",wta:"https://www.wta.org/go-hiking/hikes/naches-peak-loop"},
+  {id:14,name:"Poo Poo Point (Chirico Trail)",region:"Snoqualmie",area:"Issaquah / Tiger Mtn",dist:3.8,gain:1600,diff:"Moderate",driveMins:30,driveText:"30 min",hikeLenHrs:"2–3h",season:"Year-round",tags:["Paragliders","Views","Short & Close"],desc:"Watch paragliders launch while enjoying valley and lake views. Short but steep — gaining 700 ft in under a mile at the top. Extremely close to Bellevue, making it a great after-work option.",wta:"https://www.wta.org/go-hiking/hikes/chirico-trail"},
+  {id:15,name:"Cascade Pass & Sahale Arm",region:"North Cascades",area:"North Cascades NP",dist:13,gain:3600,diff:"Hard",driveMins:150,driveText:"150 min",hikeLenHrs:"6–8h",season:"Mid Jul–Sep",tags:["National Park","Iconic","Camping"],desc:"The pass alone is stunning (3.7 mi, 1,800 ft), but extending to Sahale Arm rewards with one of the best views in all of Washington. 36 switchbacks through forest then dramatic alpine exposure.",wta:"https://www.wta.org/go-hiking/hikes/cascade-pass-and-sahale-arm"},
+  {id:16,name:"Hidden Lake Lookout",region:"North Cascades",area:"North Cascades NP",dist:8,gain:3300,diff:"Hard",driveMins:145,driveText:"145 min",hikeLenHrs:"5–7h",season:"Late Jul–Sep",tags:["Lookout","National Park","Jaw-dropping Views"],desc:"Relentless climb to a saddle with jaw-dropping views over Hidden Lake and the jagged peaks of the North Cascades. Road to trailhead is rough — high clearance recommended. Absolutely worth every step.",wta:"https://www.wta.org/go-hiking/hikes/hidden-lake-lookout"},
+  {id:17,name:"Lake Ingalls",region:"Alpine Lakes",area:"Teanaway / Stevens Pass East",dist:9,gain:2500,diff:"Moderate–Hard",driveMins:115,driveText:"115 min",hikeLenHrs:"4–6h",season:"Jul–Oct",tags:["Alpine Lake","Mountain Goats","Mt. Stuart"],desc:"Beautiful high alpine lake with classic Mt. Stuart views. Mountain goats are frequently spotted on surrounding ridges. Day-use permits required in summer. Outstanding fishing destination.",wta:"https://www.wta.org/go-hiking/hikes/lake-ingalls"},
+  {id:18,name:"Gothic Basin",region:"North Cascades",area:"Mountain Loop Hwy",dist:9,gain:2800,diff:"Hard",driveMins:80,driveText:"80 min",hikeLenHrs:"5–7h",season:"Late Jul–Oct",tags:["Tarns","Hidden Gem","Wildflowers"],desc:"One of the most beautiful hidden gems on the Mountain Loop — multiple tarns and a dramatic rocky alpine basin. Trail is primitive in the upper section. Far fewer crowds than neighboring trails.",wta:"https://www.wta.org/go-hiking/hikes/gothic-basin"},
+  {id:19,name:"Mailbox Peak (new trail)",region:"Snoqualmie",area:"I-90 / Middle Fork",dist:9.4,gain:4000,diff:"Hard",driveMins:45,driveText:"45 min",hikeLenHrs:"5–7h",season:"Jun–Nov",tags:["Summit","Demanding","Close to Bellevue"],desc:"The new trail is challenging but far more sustainable than the brutal original route. Consistent steep switchbacks lead to an open summit with sweeping Cascades panoramas. One of the most demanding I-90 hikes.",wta:"https://www.wta.org/go-hiking/hikes/mailbox-peak-new-trail"},
+  {id:20,name:"Snow Lake",region:"Alpine Lakes",area:"Snoqualmie Pass",dist:8,gain:1800,diff:"Moderate",driveMins:55,driveText:"55 min",hikeLenHrs:"3–5h",season:"Jul–Oct",tags:["Alpine Lake","Popular","Alpine Lakes Wilderness"],desc:"Washington's most popular backcountry lake — for good reason. Excellent trail through meadows and old growth to a stunning Alpine Lakes Wilderness gem. Extremely crowded in summer; go midweek.",wta:"https://www.wta.org/go-hiking/hikes/snow-lake"},
+  {id:21,name:"Mount Si",region:"Snoqualmie",area:"North Bend",dist:8,gain:3150,diff:"Hard",driveMins:38,driveText:"38 min",hikeLenHrs:"4–6h",season:"Year-round",tags:["Iconic","Summit","Year-round"],desc:"Seattle's most climbed mountain. Consistently steep 4 miles to the summit with incredible valley and Olympic views. The Haystack scramble adds another 200 ft. Year-round access — often hiked in winter snow.",wta:"https://www.wta.org/go-hiking/hikes/mount-si"},
+  {id:22,name:"Blanca Lake",region:"North Cascades",area:"Highway 2 / Index",dist:8,gain:3400,diff:"Hard",driveMins:80,driveText:"80 min",hikeLenHrs:"5–7h",season:"Jul–Oct",tags:["Alpine Lake","Turquoise Water","Glacier Fed"],desc:"Jaw-dropping turquoise glacial lake — the color is unlike anything else in Washington. Steep initial climb then a descent to the lake. Very popular on weekends. Camp options available but a mile from the lake.",wta:"https://www.wta.org/go-hiking/hikes/blanca-lake"},
+  {id:23,name:"Chain Lakes Loop (Mt. Baker)",region:"North Cascades",area:"Mount Baker",dist:6.5,gain:1850,diff:"Moderate",driveMins:110,driveText:"110 min",hikeLenHrs:"3–5h",season:"Late Jul–Oct",tags:["Loop","Mt. Baker","Alpine Lakes"],desc:"Stunning loop around multiple tarns with dramatic close-up views of Mt. Baker and Table Mountain. One of the best moderate hikes in the state. Road to Artist Point doesn't often open until late July.",wta:"https://www.wta.org/go-hiking/hikes/chain-lakes-loop"},
+  {id:24,name:"Burroughs Mountain Loop",region:"Mount Rainier",area:"Mount Rainier NP / Sunrise",dist:8,gain:2300,diff:"Moderate–Hard",driveMins:95,driveText:"95 min",hikeLenHrs:"4–6h",season:"Mid Jul–Sep",tags:["National Park","Sunrise","Tundra Terrain"],desc:"Outstanding Rainier views from tundra-like terrain high above treeline. Go counterclockwise from Sunrise visitor center. Marmots and mountain goats are commonly spotted. Road to Sunrise opens early July.",wta:"https://www.wta.org/go-hiking/hikes/burroughs-mountain-loop"},
+  {id:25,name:"Skyline Divide",region:"North Cascades",area:"Mount Baker",dist:7.5,gain:2100,diff:"Moderate–Hard",driveMins:112,driveText:"112 min",hikeLenHrs:"4–5h",season:"Mid Jul–Oct",tags:["Mt. Baker Views","Wildflowers","Ridgeline Walk"],desc:"Fantastic north side of Mt. Baker hike with Coleman Glacier views. Wildflower-carpeted open ridgeline after treeline. May require creek crossings in early season — bring hiking poles and waterproof boots.",wta:"https://www.wta.org/go-hiking/hikes/skyline-divide"}
+];
+
+let state = {visited:{},notes:{},notesOpen:{},expanded:{},filters:{search:"",diff:"",region:"",drive:"",status:""}};
+
+(function loadState(){
+  try{const s=localStorage.getItem('wa_hikes_v3');if(s){const p=JSON.parse(s);state.visited=p.visited||{};state.notes=p.notes||{};state.filters=p.filters||state.filters;}}catch(e){}
+})();
+
+function saveState(){try{localStorage.setItem('wa_hikes_v3',JSON.stringify({visited:state.visited,notes:state.notes,filters:state.filters}));}catch(e){}}
+
+function diffBadge(d){if(d==="Moderate")return"b-mod";if(d==="Hard")return"b-hard";return"b-mh";}
+
+function renderStats(){
+  const total=HIKES.length, vis=Object.values(state.visited).filter(Boolean).length;
+  const noted=Object.keys(state.notes).filter(k=>state.notes[k]&&state.notes[k].trim()).length;
+  const remaining=total-vis;
+  const pct=Math.round((vis/total)*100);
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Total Hikes</div></div>
+    <div class="stat-card"><div class="stat-val green">${vis}</div><div class="stat-lbl">Visited</div></div>
+    <div class="stat-card"><div class="stat-val">${remaining}</div><div class="stat-lbl">Remaining</div></div>
+    <div class="stat-card"><div class="stat-val">${noted}</div><div class="stat-lbl">With Notes</div></div>`;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressPct').textContent=pct+'%';
+}
+
+function applyFilters(){
+  const f=state.filters;
+  return HIKES.filter(h=>{
+    if(f.search){const q=f.search.toLowerCase();if(!h.name.toLowerCase().includes(q)&&!h.region.toLowerCase().includes(q)&&!h.area.toLowerCase().includes(q)&&!h.tags.join(' ').toLowerCase().includes(q))return false;}
+    if(f.diff&&h.diff!==f.diff)return false;
+    if(f.region){const r=f.region.toLowerCase();if(!h.region.toLowerCase().includes(r)&&!h.area.toLowerCase().includes(r))return false;}
+    if(f.drive&&h.driveMins>parseInt(f.drive))return false;
+    if(f.status==="visited"&&!state.visited[h.id])return false;
+    if(f.status==="unvisited"&&state.visited[h.id])return false;
+    if(f.status==="noted"&&(!state.notes[h.id]||!state.notes[h.id].trim()))return false;
+    return true;
+  });
+}
+
+function render(){
+  renderStats();
+  const filtered=applyFilters();
+  const list=document.getElementById('hikesList');
+  if(!filtered.length){
+    list.innerHTML=`<div class="no-results"><div style="font-size:32px;margin-bottom:12px">🏔</div>No hikes match your filters.<br><button class="btn-clear" onclick="clearFilters()" style="margin-top:12px">Clear filters</button></div>`;
+    return;
+  }
+  list.innerHTML=filtered.map((h,i)=>{
+    const vis=!!state.visited[h.id];
+    const noteText=state.notes[h.id]||"";
+    const noteOpen=!!state.notesOpen[h.id];
+    const exp=!!state.expanded[h.id];
+    return`<div class="hike-card${vis?" visited":""}${exp?" expanded":""}" id="card-${h.id}" style="animation-delay:${i*0.03}s">
+      <div class="hike-header" onclick="toggleExpand(${h.id})">
+        <div class="hike-num">${h.id}</div>
+        <div class="hike-title-block">
+          <div class="hike-name">${h.name}${vis?`<span class="visited-tag">✓ visited</span>`:""}</div>
+          <div class="hike-loc">${h.area} &nbsp;·&nbsp; ${h.region}</div>
+          <div class="hike-badges">
+            <span class="badge ${diffBadge(h.diff)}">${h.diff}</span>
+            <span class="badge b-dist">${h.dist} mi</span>
+            <span class="badge b-elev">${h.gain.toLocaleString()} ft gain</span>
+            <span class="badge b-dist" style="background:rgba(90,158,212,0.08)">${h.driveText} drive</span>
+            ${h.tags.slice(0,2).map(t=>`<span class="badge b-tag">${t}</span>`).join("")}
+          </div>
+        </div>
+        <div class="expand-icon">▼</div>
+      </div>
+      <div class="hike-details">
+        <p class="detail-desc">${h.desc}</p>
+        <div class="meta-grid">
+          <div class="meta-item"><div class="meta-val">${h.driveMins} min</div><div class="meta-lbl">Drive from Bellevue</div></div>
+          <div class="meta-item"><div class="meta-val">${h.dist} mi</div><div class="meta-lbl">Round trip</div></div>
+          <div class="meta-item"><div class="meta-val">${h.gain.toLocaleString()} ft</div><div class="meta-lbl">Elevation gain</div></div>
+          <div class="meta-item"><div class="meta-val">${h.hikeLenHrs}</div><div class="meta-lbl">Hike time</div></div>
+        </div>
+        <div class="detail-footer">
+          <span>Season: ${h.season}</span>
+          <span>·</span>
+          <a href="${h.wta}" target="_blank">View on WTA ↗</a>
+        </div>
+        <div class="actions-row">
+          <button class="btn-visit${vis?" active":""}" onclick="toggleVisit(event,${h.id})">${vis?"✓ Visited":"Mark as visited"}</button>
+          <button class="btn-notes" onclick="toggleNotes(event,${h.id})">${noteOpen?"Hide notes":"Add / edit notes"}</button>
+        </div>
+        ${noteOpen?`<div class="notes-section">
+          <textarea id="note-${h.id}" placeholder="Add trip date, conditions, your tips…" onblur="saveNote(${h.id})">${noteText}</textarea>
+          <div class="saved-msg" id="saved-${h.id}"></div>
+        </div>`:noteText?`<div class="note-preview">${noteText.length>140?noteText.slice(0,140)+"…":noteText}</div>`:""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toggleExpand(id){state.expanded[id]=!state.expanded[id];render();}
+function toggleVisit(e,id){e.stopPropagation();state.visited[id]=!state.visited[id];saveState();render();}
+function toggleNotes(e,id){e.stopPropagation();state.notesOpen[id]=!state.notesOpen[id];render();if(state.notesOpen[id]){setTimeout(()=>{const t=document.getElementById('note-'+id);if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);}},60);}}
+function saveNote(id){const t=document.getElementById('note-'+id);if(t){state.notes[id]=t.value;saveState();const s=document.getElementById('saved-'+id);if(s){s.textContent="Saved";setTimeout(()=>{if(s)s.textContent="";},1500);}}}
+
+function clearFilters(){
+  state.filters={search:"",diff:"",region:"",drive:"",status:""};
+  document.getElementById('searchInput').value="";
+  document.getElementById('diffFilter').value="";
+  document.getElementById('regionFilter').value="";
+  document.getElementById('driveFilter').value="";
+  document.getElementById('statusFilter').value="";
+  saveState();render();
+}
+
+// Restore filter UI values
+document.getElementById('searchInput').value=state.filters.search||"";
+document.getElementById('diffFilter').value=state.filters.diff||"";
+document.getElementById('regionFilter').value=state.filters.region||"";
+document.getElementById('driveFilter').value=state.filters.drive||"";
+document.getElementById('statusFilter').value=state.filters.status||"";
+
+document.getElementById('searchInput').addEventListener('input',e=>{state.filters.search=e.target.value;saveState();render();});
+document.getElementById('diffFilter').addEventListener('change',e=>{state.filters.diff=e.target.value;saveState();render();});
+document.getElementById('regionFilter').addEventListener('change',e=>{state.filters.region=e.target.value;saveState();render();});
+document.getElementById('driveFilter').addEventListener('change',e=>{state.filters.drive=e.target.value;saveState();render();});
+document.getElementById('statusFilter').addEventListener('change',e=>{state.filters.status=e.target.value;saveState();render();});
+
+render();
+</script>
+</body>
+</html>
